@@ -1,6 +1,4 @@
-"use client"
 
-import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -18,51 +16,85 @@ import {
   ArrowLeft,
 } from "lucide-react"
 import Link from "next/link"
+import { Job } from "./job-list"
+import prisma from "@/lib/prisma"
+import { ApplyJob, saveJob } from "@/lib/actions"
+import { auth } from "@/lib/auth"
+import { SaveButton } from "./save-button"
+import { ShareButton } from "./share-button"
+import { ApplyButton } from "./apply-action"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Mail } from "lucide-react"
+import { SignInToApplyButton } from "./signin-in-apply-button"
 
-// Mock data - in a real app, this would come from an API
-const jobData: Record<string, any> = {
-  "1": {
-    id: 1,
-    title: "Senior Full Stack Developer",
-    company: "TechCorp",
-    logo: "🚀",
-    location: "San Francisco, CA",
-    type: "Full-time",
-    salary: "$120k - $180k",
-    tags: ["React", "Node.js", "TypeScript", "AWS"],
-    posted: "2 days ago",
-    featured: true,
-    description: `We're looking for an experienced Full Stack Developer to join our growing team. You'll be working on cutting-edge web applications that serve millions of users worldwide.`,
-    responsibilities: [
-      "Design and develop scalable web applications using React and Node.js",
-      "Collaborate with cross-functional teams to define and implement new features",
-      "Write clean, maintainable, and well-documented code",
-      "Participate in code reviews and mentor junior developers",
-      "Optimize applications for maximum speed and scalability",
-    ],
-    requirements: [
-      "5+ years of experience in full-stack development",
-      "Strong proficiency in React, Node.js, and TypeScript",
-      "Experience with cloud platforms (AWS, Azure, or GCP)",
-      "Excellent problem-solving and communication skills",
-      "Bachelor's degree in Computer Science or related field",
-    ],
-    benefits: [
-      "Competitive salary and equity package",
-      "Health, dental, and vision insurance",
-      "Flexible work hours and remote options",
-      "Professional development budget",
-      "Unlimited PTO",
-    ],
-    companySize: "500-1000 employees",
-    industry: "Technology",
-    founded: "2015",
-  },
-}
 
-export function JobDetailContent({ jobId }: { jobId: string }) {
-  const [isSaved, setIsSaved] = useState(false)
-  const job = jobData[jobId] || jobData["1"]
+
+export default async function JobDetailContent({ job }: { job: Job }) {
+  const session = await auth();
+  const userId = session?.user?.id;
+  const jobId = job.id;
+  const jobTitle = job.title;
+
+  // Fetch full user to get role
+  const user = userId
+    ? await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    })
+    : null;
+
+  const isApplicant = user?.role === "Applicant" || !user; // treat logged-out as applicant view
+
+  // Only fetch save/apply state if applicant
+  const savedJob =
+    isApplicant && userId
+      ? await prisma.savedJob.findUnique({
+        where: { userId_jobId: { userId, jobId } },
+      })
+      : null;
+  const isSaved = !!savedJob;
+
+  const applied =
+    isApplicant && userId
+      ? await prisma.application.findUnique({
+        where: { applicantId_jobId: { applicantId: userId, jobId } },
+      })
+      : null;
+  const isApplied = !!applied;
+
+
+  // Only fetch applicants if employer
+  const applicants =
+    !isApplicant
+      ? await prisma.application.findMany({
+        where: { jobId },
+        include: {
+          applicant: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+              bio: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      })
+      : [];
+
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "pending": return "bg-blue-500/20 text-blue-500 border-blue-500/30"
+      case "interview": return "bg-accent/20 text-accent border-accent/30"
+      case "rejected": return "bg-destructive/20 text-destructive border-destructive/30"
+      case "hired": return "bg-green-500/20 text-green-500 border-green-500/30"
+      default: return "bg-secondary"
+    }
+  }
+
+
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -80,9 +112,10 @@ export function JobDetailContent({ jobId }: { jobId: string }) {
           {/* Job Header */}
           <Card className="p-8 glass-effect">
             <div className="flex flex-col md:flex-row gap-6">
+              {/*Company Logo */}
               <div className="flex-shrink-0">
-                <div className="w-20 h-20 rounded-xl bg-secondary flex items-center justify-center text-4xl">
-                  {job.logo}
+                <div className="w-16 h-16 rounded-xl bg-secondary flex items-center justify-center group-hover:scale-110 transition-transform text-3xl">
+                  {job.logo ?? "💼"}
                 </div>
               </div>
 
@@ -110,7 +143,11 @@ export function JobDetailContent({ jobId }: { jobId: string }) {
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-4 w-4" />
-                    Posted {job.posted}
+                    Posted {new Date(job.posted).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric"
+                    })}
                   </div>
                 </div>
 
@@ -135,12 +172,12 @@ export function JobDetailContent({ jobId }: { jobId: string }) {
           <Card className="p-8">
             <h2 className="text-2xl font-semibold mb-4">Responsibilities</h2>
             <ul className="space-y-3">
-              {job.responsibilities.map((item: string, index: number) => (
+              {job.responsibilities /*.map((item: string, index: number) => (
                 <li key={index} className="flex gap-3">
                   <CheckCircle2 className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
                   <span className="text-muted-foreground">{item}</span>
                 </li>
-              ))}
+              ))*/}
             </ul>
           </Card>
 
@@ -148,12 +185,12 @@ export function JobDetailContent({ jobId }: { jobId: string }) {
           <Card className="p-8">
             <h2 className="text-2xl font-semibold mb-4">Requirements</h2>
             <ul className="space-y-3">
-              {job.requirements.map((item: string, index: number) => (
+              {job.requirements/*.map((item: string, index: number) => (
                 <li key={index} className="flex gap-3">
                   <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                   <span className="text-muted-foreground">{item}</span>
                 </li>
-              ))}
+              ))*/}
             </ul>
           </Card>
 
@@ -161,12 +198,12 @@ export function JobDetailContent({ jobId }: { jobId: string }) {
           <Card className="p-8">
             <h2 className="text-2xl font-semibold mb-4">Benefits & Perks</h2>
             <ul className="space-y-3">
-              {job.benefits.map((item: string, index: number) => (
+              {job.benefits/*.map((item: string, index: number) => (
                 <li key={index} className="flex gap-3">
                   <CheckCircle2 className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
                   <span className="text-muted-foreground">{item}</span>
                 </li>
-              ))}
+              ))*/}
             </ul>
           </Card>
         </div>
@@ -174,21 +211,86 @@ export function JobDetailContent({ jobId }: { jobId: string }) {
         {/* Sidebar */}
         <div className="lg:col-span-1 space-y-6">
           {/* Apply Card */}
+          {/* Apply Card */}
           <Card className="p-6 glass-effect sticky top-24">
-            <div className="space-y-4">
-              <Button className="w-full" size="lg">
-                Apply for this Position
-              </Button>
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1 gap-2 bg-transparent" onClick={() => setIsSaved(!isSaved)}>
-                  <Bookmark className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} />
-                  {isSaved ? "Saved" : "Save"}
-                </Button>
-                <Button variant="outline" size="icon">
-                  <Share2 className="h-4 w-4" />
-                </Button>
+            {isApplicant ? (
+              // ── Applicant view ──
+              <div className="space-y-4">
+                {!userId ? (
+                  // Guest user
+                  <SignInToApplyButton />
+                ) : (
+                  <>
+                    <ApplyButton posterId={job.posterId!} jobId={job.id} jobTitle={job.title} />
+                    <div className="flex gap-2">
+                      <SaveButton jobId={jobId} initialSaved={isSaved} userId={userId} />
+                      <ShareButton jobId={jobId} jobTitle={jobTitle} />
+                    </div>
+                  </>
+                )}
               </div>
-            </div>
+            ) : (
+              // ── Employer view ──
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold">Applicants</h3>
+                  <Badge variant="secondary">{applicants.length}</Badge>
+                </div>
+
+                {applicants.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center gap-2">
+                    <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm font-medium">No applicants yet</p>
+                    <p className="text-xs text-muted-foreground">
+                      Share this listing to attract candidates.
+                    </p>
+                    <ShareButton jobId={jobId} jobTitle={jobTitle} />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {applicants.map((app) => (
+                      <Link
+                        key={app.id}
+                        href={`/jobs/${jobId}/applicant/${app.id}`}
+                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors group"
+                      >
+                        {/* Avatar */}
+                        <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center overflow-hidden shrink-0">
+                          {app.applicant.image ? (
+                            <img
+                              src={app.applicant.image}
+                              alt={app.applicant.name ?? "Applicant"}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-lg">👤</span>
+                          )}
+                        </div>
+
+                        {/* Details */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate group-hover:text-primary transition-colors">
+                            {app.applicant.name ?? "Unknown"}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                            <Mail className="h-3 w-3 shrink-0" />
+                            {app.applicant.email}
+                          </p>
+                        </div>
+
+                        {/* Status badge */}
+                        <Badge className={`${getStatusColor(app.status)} text-xs shrink-0`}>
+                          {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                        </Badge>
+                      </Link>
+                    ))}
+
+                  </div>
+                )}
+              </div>
+            )}
           </Card>
 
           {/* Company Info */}
@@ -219,9 +321,7 @@ export function JobDetailContent({ jobId }: { jobId: string }) {
                 </div>
               </div>
             </div>
-            <Button variant="outline" className="w-full mt-4 bg-transparent" asChild>
-              <Link href={`/companies/${job.company.toLowerCase()}`}>View Company Profile</Link>
-            </Button>
+            
           </Card>
 
           {/* Similar Jobs */}

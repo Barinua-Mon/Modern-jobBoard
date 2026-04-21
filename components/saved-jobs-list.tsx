@@ -7,63 +7,98 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MapPin, Clock, DollarSign, ExternalLink, Trash2, ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { removeJob } from "@/lib/actions"
 
-// Mock saved jobs data
-const savedJobsData = [
-  {
-    id: 1,
-    title: "Senior Full Stack Developer",
-    company: "TechCorp",
-    logo: "🚀",
-    location: "San Francisco, CA",
-    type: "Full-time",
-    salary: "$120k - $180k",
-    tags: ["React", "Node.js", "TypeScript", "AWS"],
-    posted: "2 days ago",
-    savedDate: "Today",
-    featured: true,
-    status: "active",
-  },
-  {
-    id: 2,
-    title: "Frontend Developer",
-    company: "StartupXYZ",
-    logo: "⚡",
-    location: "Remote",
-    type: "Full-time",
-    salary: "$100k - $140k",
-    tags: ["React", "Next.js", "Tailwind"],
-    posted: "1 week ago",
-    savedDate: "Yesterday",
-    featured: false,
-    status: "active",
-  },
-  {
-    id: 3,
-    title: "Product Designer",
-    company: "DesignCo",
-    logo: "🎨",
-    location: "New York, NY",
-    type: "Full-time",
-    salary: "$110k - $150k",
-    tags: ["Figma", "UI/UX", "Design Systems"],
-    posted: "3 days ago",
-    savedDate: "2 days ago",
-    featured: false,
-    status: "applied",
-  },
-]
 
-export function SavedJobsList() {
-  const [savedJobs, setSavedJobs] = useState(savedJobsData)
-  const [activeTab, setActiveTab] = useState("all")
+export interface SavedJobInterface {
+  id: string
+  savedAt: Date
+  jobId: string
+  userId: string
 
-  const removeJob = (jobId: number) => {
-    setSavedJobs(savedJobs.filter((job) => job.id !== jobId))
+  job: {
+    id: string
+    title: string
+    company: string
+    location: string
+    description: string
+    responsibilities: string
+    requirements: string
+    experienceLevel: string
+    type: string
+    tags: string[]
+    posted: Date
+    email: string
+    featured: boolean
+    benefits: string
+    companySize?: string | null
+    industry?: string | null
+    founded?: string | null
+    logo: string
+    salary: string
+    salaryMin?: number | null
+    salaryMax?: number | null
+    currency?: string | null
+    posterId?: string | null
+    updatedAt: Date
+
+    applications: {
+      id: string
+      applicantId: string
+      jobId: string
+      createdAt: Date
+      updatedAt: Date
+    }[]
+  }
+}
+
+export interface SavedJobUI {
+  id: string
+  jobId: string
+  title: string
+  company: string
+  location: string
+  type: string
+  salary: string
+  tags: string[]
+  posted: Date
+  logo: string
+  featured: boolean
+
+  savedDate: Date
+  status: "active" | "applied"
+}
+
+export function SavedJobsList({initialSavedJobs}: {initialSavedJobs:SavedJobInterface[] }) {
+  const [savedJobs, setSavedJobs] = useState<SavedJobUI[]>(() => initialSavedJobs.map((item)=>({
+    jobId: item.jobId,
+    savedDate: item.savedAt,
+    status: item.job.applications.length > 0 ? "applied" : "active",
+    ...item.job
+  })))
+
+  const [activeTab, setActiveTab] = useState("all");
+
+  const handleRemovedJob = async (jobId: string)=>{
+      // 1) Store previous state for role back
+      const previousJobs = savedJobs;
+
+      //2) Optimistically update UI
+      setSavedJobs((prev)=> prev.filter((job)=> job.jobId !== jobId));
+
+      try{
+        //3) Call server action
+        await removeJob(jobId)
+      }catch(err){
+        //4) Fallback to original job if operation fails
+        setSavedJobs(previousJobs);
+        console.error("failed to remove job:", err)
+      }
   }
 
+
   const filteredJobs =
-    activeTab === "all" ? savedJobs : savedJobs.filter((job) => job.status === activeTab.replace("-", ""))
+    activeTab === "all" ? savedJobs : savedJobs.filter((job) => job.status === activeTab)
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -159,9 +194,17 @@ export function SavedJobsList() {
                     </div>
 
                     <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2">
-                      <span>Posted {job.posted}</span>
+                      <span>Posted {new Date(job.posted).toLocaleDateString("en-US",{
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric"
+                      })}</span>
                       <span>•</span>
-                      <span>Saved {job.savedDate}</span>
+                      <span>Saved {new Date(job.savedDate).toLocaleDateString("en-US",{
+                        year: "numeric",
+                        month:"short",
+                        day:"numeric"
+                      })}</span>
                       {job.status === "applied" && (
                         <>
                           <span>•</span>
@@ -175,7 +218,7 @@ export function SavedJobsList() {
 
                   {/* Actions */}
                   <div className="flex lg:flex-col gap-2 items-start">
-                    <Button variant="ghost" size="icon" onClick={() => removeJob(job.id)} className="text-destructive">
+                    <Button variant="ghost" size="icon" onClick={() => handleRemovedJob(job.jobId)} className="text-destructive">
                       <Trash2 className="h-5 w-5" />
                     </Button>
                     <Button className="flex-1 lg:flex-none gap-2" asChild>

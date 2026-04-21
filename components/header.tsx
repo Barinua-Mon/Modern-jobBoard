@@ -4,10 +4,12 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Moon, Sun, Briefcase, Menu, X } from "lucide-react"
 import Link from "next/link"
+import { useSignIn } from "./sign-in-trigger"
 
 export function Header() {
   const [isDark, setIsDark] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { openSignIn } = useSignIn()
 
   useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains("dark")
@@ -60,10 +62,10 @@ export function Header() {
             {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
 
-          <Button variant="outline" className="hidden sm:inline-flex bg-transparent" asChild>
-            <Link href="/signin">Sign In</Link>
+          <Button onClick={openSignIn} className="bg-primary hover:bg-primary/90 hidden sm:inline-flex cursor-pointer">
+            Sign In
           </Button>
-          <Button className="bg-primary hover:bg-primary/90 hidden sm:inline-flex" asChild>
+          <Button variant="outline" className="hidden sm:inline-flex bg-transparent" asChild>
             <Link href="/post-job">Post a Job</Link>
           </Button>
         </div>
@@ -72,6 +74,18 @@ export function Header() {
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-border/40 bg-background/95 backdrop-blur">
           <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
+
+            {/* Sign In — primary, at the top */}
+            <Button
+              className="w-full"
+              onClick={() => {
+                openSignIn()
+                setIsMobileMenuOpen(false)
+              }}
+            >
+              Sign In
+            </Button>
+
             <Link
               href="/"
               className="text-sm font-medium hover:text-primary transition-colors"

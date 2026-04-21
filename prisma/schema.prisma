@@ -1,0 +1,181 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+  runtime  = "vercel-edge"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  password      String?
+  accounts      Account[]
+  sessions      Session[]
+  role          Role      @default(Applicant)
+  jobsPosted  Job[] @relation("JobPoster")
+  applications  Application[] @relation("UserApplications")
+  jobSaved      SavedJob[] @relation("UserSavedJobs")
+  notification   Notification[] @relation("NotifiedUser")
+
+  resume  String?
+  bio     String? @db.VarChar(500)
+  skills  String[]
+
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Job {
+  id               String   @id @default(cuid())
+  title           String
+  company          String
+  location         String
+  description      String
+  responsibilities String
+  requirements     String
+  experienceLevel  String
+  type             String
+  tags             String[]
+  posted           DateTime @default(now())
+  email            String
+  featured         Boolean @default(false)
+  benefits         String
+  companySize      String?
+  industry         String?
+  founded          String?
+  logo             String
+  salary           String
+  salaryMin        Int?
+  salaryMax        Int?
+  currency         String?  @default("USD")
+  posterId         String?
+  poster           User?  @relation("JobPoster", fields: [posterId], references: [id], onDelete: Cascade)
+  savedJobs       SavedJob[] @relation("JobSavedJobs")
+  applications     Application[] @relation("JobApplications")
+  updatedAt        DateTime @default(now()) @updatedAt
+  status           Status?  @default(ACTIVE)
+
+  @@map("jobs")
+}
+
+model Application {
+  id           String   @id @default(cuid())
+  applicantId  String   
+  applicant    User     @relation("UserApplications", fields: [applicantId], references: [id], onDelete: Cascade)
+  jobId        String   
+  job          Job      @relation("JobApplications", fields: [jobId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  interviewType   InterviewType? 
+  interviewDate    DateTime?
+  status          ApplicationStatus @default(UNDER_REVIEW)
+
+  @@unique([applicantId, jobId])
+  @@map("applications")
+}
+
+model SavedJob {
+  id        String   @id @default(cuid())
+  
+  savedAt   DateTime @default(now())
+
+  jobId     String
+  job       Job  @relation("JobSavedJobs", fields: [jobId], references: [id], onDelete: Cascade)
+  
+  userId    String
+  user      User @relation("UserSavedJobs", fields: [userId], references:[id], onDelete: Cascade)
+
+  @@unique([userId, jobId])
+  @@map("saved_jobs")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("NotifiedUser", fields: [userId], references: [id], onDelete: Cascade)
+  type      String?   
+  title     String?
+  message   String
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+}
+
+
+
+
+enum Role {
+  Applicant
+  Employer
+}
+
+enum InterviewType {
+  VIDEO
+  PHYSICAL
+  PHONE
+}
+
+enum ApplicationStatus {
+  UNDER_REVIEW
+  INTERVIEW
+  ACCEPTED
+  REJECTED
+  HIRED
+}
+
+enum Status {
+  ACTIVE
+  CLOSED
+  DRAFT
+}

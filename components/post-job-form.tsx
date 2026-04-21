@@ -14,12 +14,17 @@ import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, Plus, X, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { CreateJob } from "@/lib/actions"
 
 export function PostJobForm() {
   const router = useRouter()
   const [tags, setTags] = useState<string[]>([])
   const [currentTag, setCurrentTag] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [type, setType] = useState("")
+  const [experienceLevel, setExpereinceLevel] = useState("")
+  const [industry, setIndustry] = useState("")
+  const [companySize, setCompanySize] = useState("")
 
   const addTag = () => {
     if (currentTag.trim() && !tags.includes(currentTag.trim())) {
@@ -31,17 +36,7 @@ export function PostJobForm() {
   const removeTag = (tagToRemove: string) => {
     setTags(tags.filter((tag) => tag !== tagToRemove))
   }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    setIsSubmitting(false)
-    router.push("/")
-  }
+  
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -59,7 +54,7 @@ export function PostJobForm() {
         <p className="text-muted-foreground">Find the perfect candidate for your team</p>
       </div>
 
-      <form onSubmit={handleSubmit}>
+      <form action={CreateJob}>
         <div className="space-y-6">
           {/* Basic Information */}
           <Card className="p-8">
@@ -68,26 +63,26 @@ export function PostJobForm() {
             <div className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="title">Job Title *</Label>
-                <Input id="title" placeholder="e.g. Senior Full Stack Developer" required />
+                <Input name="title" placeholder="e.g. Senior Full Stack Developer" required />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="company">Company Name *</Label>
-                  <Input id="company" placeholder="Your company name" required />
+                  <Input name="company" placeholder="Your company name" required />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="location">Location *</Label>
-                  <Input id="location" placeholder="e.g. San Francisco, CA or Remote" required />
+                  <Input name="location" placeholder="e.g. San Francisco, CA or Remote" required />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="type">Job Type *</Label>
-                  <Select required>
-                    <SelectTrigger id="type">
+                  <Select value={type} onValueChange={setType} required>
+                    <SelectTrigger name="type">
                       <SelectValue placeholder="Select job type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -97,18 +92,34 @@ export function PostJobForm() {
                       <SelectItem value="internship">Internship</SelectItem>
                     </SelectContent>
                   </Select>
+                  <input type="hidden" name="type" value={type}/>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="salary">Salary Range *</Label>
-                  <Input id="salary" placeholder="e.g. $120k - $180k" required />
+                  <Input name="salary" placeholder="e.g. $120k - $180k" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="experienceLevel">Experience Level *</Label>
+                  <Select value={experienceLevel} onValueChange={setExpereinceLevel} required>
+                    <SelectTrigger name="experienceLevel">
+                      <SelectValue placeholder="Select experience level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="junior">Entry</SelectItem>
+                      <SelectItem value="mid">Mid Level</SelectItem>
+                      <SelectItem value="senior">Senior</SelectItem>
+                      <SelectItem value="lead">Lead</SelectItem>
+                    </SelectContent>
+                  </Select>
+                   <input type="hidden" name="experienceLevel" value={experienceLevel}/>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="category">Category *</Label>
-                <Select required>
-                  <SelectTrigger id="category">
+                <Label htmlFor="category">Industry *</Label>
+                <Select value={industry} onValueChange={setIndustry} required>
+                  <SelectTrigger name="industry">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -118,8 +129,11 @@ export function PostJobForm() {
                     <SelectItem value="marketing">Marketing</SelectItem>
                     <SelectItem value="sales">Sales</SelectItem>
                     <SelectItem value="operations">Operations</SelectItem>
+                    <SelectItem value="technology">Technology</SelectItem>
+                    <SelectItem value="medicine">Medicine</SelectItem>
                   </SelectContent>
                 </Select>
+                <input type="hidden" name="industry" value={industry} />
               </div>
             </div>
           </Card>
@@ -132,7 +146,7 @@ export function PostJobForm() {
               <div className="space-y-2">
                 <Label htmlFor="description">About the Role *</Label>
                 <Textarea
-                  id="description"
+                  name="description"
                   placeholder="Describe the role, what the candidate will be doing, and what makes this opportunity exciting..."
                   className="min-h-32"
                   required
@@ -142,7 +156,7 @@ export function PostJobForm() {
               <div className="space-y-2">
                 <Label htmlFor="responsibilities">Responsibilities *</Label>
                 <Textarea
-                  id="responsibilities"
+                  name="responsibilities"
                   placeholder="List the key responsibilities (one per line)..."
                   className="min-h-32"
                   required
@@ -152,7 +166,7 @@ export function PostJobForm() {
               <div className="space-y-2">
                 <Label htmlFor="requirements">Requirements *</Label>
                 <Textarea
-                  id="requirements"
+                  name="requirements"
                   placeholder="List the required qualifications and skills (one per line)..."
                   className="min-h-32"
                   required
@@ -162,7 +176,7 @@ export function PostJobForm() {
               <div className="space-y-2">
                 <Label htmlFor="benefits">Benefits & Perks</Label>
                 <Textarea
-                  id="benefits"
+                  name="benefits"
                   placeholder="List the benefits and perks (one per line)..."
                   className="min-h-24"
                 />
@@ -179,7 +193,7 @@ export function PostJobForm() {
                 <Label htmlFor="tags">Required Skills</Label>
                 <div className="flex gap-2">
                   <Input
-                    id="tags"
+                    name="tags"
                     placeholder="e.g. React, Node.js, TypeScript"
                     value={currentTag}
                     onChange={(e) => setCurrentTag(e.target.value)}
@@ -208,6 +222,7 @@ export function PostJobForm() {
                   ))}
                 </div>
               )}
+              <input type="hidden" name="tag" value={tags.join(",")} />
             </div>
           </Card>
 
@@ -219,7 +234,7 @@ export function PostJobForm() {
               <div className="space-y-2">
                 <Label htmlFor="company-description">About Your Company</Label>
                 <Textarea
-                  id="company-description"
+                  name="company-description"
                   placeholder="Tell candidates about your company, mission, and culture..."
                   className="min-h-24"
                 />
@@ -228,8 +243,8 @@ export function PostJobForm() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="company-size">Company Size</Label>
-                  <Select>
-                    <SelectTrigger id="company-size">
+                  <Select value={companySize} onValueChange={setCompanySize}>
+                    <SelectTrigger name="company-size">
                       <SelectValue placeholder="Select company size" />
                     </SelectTrigger>
                     <SelectContent>
@@ -241,11 +256,12 @@ export function PostJobForm() {
                       <SelectItem value="1000+">1000+ employees</SelectItem>
                     </SelectContent>
                   </Select>
+                  <input type="hidden" name="company-size" value={companySize}/>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="website">Company Website</Label>
-                  <Input id="website" type="url" placeholder="https://yourcompany.com" />
+                  <Input name="website" type="url" placeholder="https://yourcompany.com" />
                 </div>
               </div>
             </div>
@@ -258,12 +274,12 @@ export function PostJobForm() {
             <div className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email">Application Email *</Label>
-                <Input id="email" type="email" placeholder="jobs@yourcompany.com" required />
+                <Input name="email" type="email" placeholder="jobs@yourcompany.com" required />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="apply-url">Application URL (Optional)</Label>
-                <Input id="apply-url" type="url" placeholder="https://yourcompany.com/careers/apply" />
+                <Input name="apply-url" type="url" placeholder="https://yourcompany.com/careers/apply" />
               </div>
             </div>
           </Card>

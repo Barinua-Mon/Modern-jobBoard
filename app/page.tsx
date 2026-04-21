@@ -1,11 +1,27 @@
+
 import { Header } from "@/components/header"
 import { Hero } from "@/components/hero"
 import { JobFilters } from "@/components/job-filters"
-import { JobList } from "@/components/job-list"
+import JobList from "@/components/job-list"
 import { FeaturedCompanies } from "@/components/featured-companies"
-import { Stats } from "@/components/stats"
+import  {Stats}  from "@/components/stats"
+import { Suspense } from "react"
+import { JobListSkeleton } from "@/components/job-card-skeleton"
 
-export default function Home() {
+export const dynamic = "force-dynamic"
+
+interface Props {
+  searchParams: Promise<{
+    q?: string
+    location?: string
+    type?: string | string[]
+    level?: string | string[]
+    minSalary?: string
+  }>
+}
+
+export default async function Home({ searchParams }: Props) {
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -18,7 +34,9 @@ export default function Home() {
             <JobFilters />
           </aside>
           <main className="lg:col-span-3">
-            <JobList />
+            <Suspense fallback={<JobListSkeleton/>}>
+              <JobList searchParams={searchParams} />
+            </Suspense>
           </main>
         </div>
       </div>
