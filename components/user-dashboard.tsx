@@ -22,7 +22,8 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { NotificationBell } from "./notification-bell"
-import { calculateProfileCompletion } from "@/lib/utils/data"
+import { calculateProfileCompletion } from "@/lib/data/calculateProfileCompletion"
+
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
