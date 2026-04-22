@@ -1,23 +1,20 @@
+import prisma from "@/lib/prisma"
 import { Suspense } from "react"
 import { StatCards } from "./stat-cards"
 import { Skeleton } from "@/components/ui/skeleton"
 
-async function fetchStats() {
-  const res = await fetch(`http://localhost:3000/api/stats`, {
-    next: { revalidate: 3600 }, // refresh every hour
-  })
-  return res.json()
-}
-
 async function StatsContent() {
-  const { activeJobs, companies, developers, successRate } = await fetchStats()
+  const [activeJobs, companies] = await Promise.all([
+    prisma.job.count({ where: { status: "ACTIVE" } }),
+    prisma.job.groupBy({ by: ["company"] }).then((r) => r.length),
+  ])
 
   return (
     <StatCards
       activeJobs={activeJobs}
       companies={companies}
-      developers={developers}
-      successRate={successRate}
+      developers={0}
+      successRate={95}
     />
   )
 }
