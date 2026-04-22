@@ -1,15 +1,20 @@
+import prisma from "../prisma";
 
 
 export async function getJobs() {
-    const results =  await fetch("http://localhost:3000/api/jobs", {next: {revalidate: 3600}});
+    const results =  await fetch(`${process.env.AUTH_URL}/api/jobs`, {next: {revalidate: 3600}});
     const jobs = await results.json();
 
      return jobs;
 
 };
 
+export async function getAllJobs() {
+  return await prisma.job.findMany();
+}
+
 export async function getJobById(id:string) {
-const results =  await fetch(`http://localhost:3000/api/job/${id}`, {next: {revalidate: 3600}});
+const results =  await fetch(`${process.env.AUTH_URL}/${id}`, {next: {revalidate: 3600}});
     const job = await results.json();
     
      return job;
