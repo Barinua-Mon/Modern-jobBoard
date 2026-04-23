@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { Toaster } from "sonner"
 import { SignInProvider } from "@/components/sign-in-trigger"
+import { SessionProvider } from "next-auth/react"
 
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -24,9 +25,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`font-sans antialiased`}>
-        <SignInProvider>
-          {children}
-        </SignInProvider>
+        <SessionProvider>
+          <SignInProvider>
+            {children}
+          </SignInProvider>
+        </SessionProvider>
         <Analytics />
         <Toaster position="top-center" richColors />
       </body>

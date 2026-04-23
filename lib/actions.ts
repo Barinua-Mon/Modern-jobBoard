@@ -10,6 +10,7 @@ import { createNotification } from "./notification";
 import { updateApplicationStatus } from "./updateNotificationStatus";
 import { ApplicationStatus, InterviewType } from "../lib/generated/prisma/enums"
 import bcrypt from "bcryptjs";
+import { signOut } from "@/lib/auth";
 
 
 //Get the supabase url and service_role_key(server side only)
@@ -17,6 +18,11 @@ const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
+
+//SIGNOUT USER WITH GITHUB
+export async function signOutAction() {
+  await signOut({ redirectTo: "/" })
+}
 
 //SIGNIN USER WITH GITHUB
 export async function SignInActionWithGithub() {

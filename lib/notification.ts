@@ -33,7 +33,7 @@ export async function createNotification({
       <div style="font-family:sans-serif;max-width:600px;margin:auto;padding:24px">
         <h2 style="margin-bottom:8px">${title}</h2>
         <p style="color:#666">${message}</p>
-        ${link ? `<a href="http://localhost:3000/${link}" 
+        ${link ? `<a href="${process.env.AUTH_URL}${link}" 
           style="display:inline-block;margin-top:16px;padding:10px 20px;background:#6366f1;color:white;border-radius:8px;text-decoration:none">
           View Details
         </a>` : ""}
