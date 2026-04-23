@@ -67,9 +67,12 @@ export function Header() {
 
           {session ? (
             <Button
-              onClick={() => signOutAction()}
+              onClick={() => {
+                signOutAction()
+                setIsMobileMenuOpen(false)
+              }}
               variant="outline"
-              className="hidden sm:inline-flex bg-transparent"
+              className="w-full bg-transparent"  // ← full width, always visible
             >
               Sign Out
             </Button>
@@ -91,9 +94,12 @@ export function Header() {
 
             {session ? (
               <Button
-                onClick={() => signOutAction()}
+                onClick={() => {
+                  signOutAction()
+                  setIsMobileMenuOpen(false)
+                }}
                 variant="outline"
-                className="hidden sm:inline-flex bg-transparent"
+                className="w-full bg-transparent"  // ← full width, always visible
               >
                 Sign Out
               </Button>
