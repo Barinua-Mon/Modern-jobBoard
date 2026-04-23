@@ -148,7 +148,7 @@ export function NotificationBell({ userId, userRole }: NotificationBellProps) {
 
             {/* ── Dropdown ── */}
             {open && (
-                <Card className="absolute right-0 top-12 w-[calc(100vw-2rem)] sm:w-80 z-50 shadow-xl overflow-hidden">
+                <Card className="fixed right-2 top-20 w-72 z-[100] shadow-xl overflow-y-auto max-h-[80vh]">
 
                     {/* Header */}
                     <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
